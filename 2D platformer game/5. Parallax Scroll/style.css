@@ -1,0 +1,12 @@
+body{
+    background-color: #111;
+}
+/*or use id*/
+canvas{
+    background-color: lightgrey;
+    display:block;
+    margin: 0 auto;
+    border: 4px solid white;
+    border-radius: 10px;
+}
+
