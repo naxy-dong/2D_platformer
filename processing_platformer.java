@@ -21,6 +21,7 @@ public class Platformer_2D extends PApplet {
     //Necessary objects
     Player p1;
     ArrayList<Platform> platforms = new ArrayList<>();
+    ArrayList<Background> backgrounds = new ArrayList<>();
     Timer timer;
     Timer inGameTimer;
     /***************************  IMAGES AND ANIMATIONS  ***************************/
@@ -65,9 +66,9 @@ public class Platformer_2D extends PApplet {
     // y: in range of 0-17
     //platform data format: x, y, w, h
     private final int[][] platform_position = {
-        {0,8,10,8}, {16,8,2,2}
+        {0,8,10,8}, {16,8,2,2}, {10,15,5,2}, {0, 17, 255,1}
     };
-    private final int[][] map = new int[18][64];
+    private final int[][] map = new int[18][256];
     int offSet;
     /*
         // x: in range of 0-32  (32 excluded)
@@ -103,7 +104,6 @@ public class Platformer_2D extends PApplet {
                 }
             }
         }
-
         //CORNERS
         map[y][x] = 1;
         map[endi][x] = 7;
@@ -122,7 +122,10 @@ public class Platformer_2D extends PApplet {
     public void setup() {
         int i, j;
         // Background Sprite
-        bgImage = loadImage("resources/Art/Pixel Adventure 1/Background/Blue.png");
+//        bgImage = loadImage("resources/Art/Pixel Adventure 1/Background/Blue.png");
+        backgrounds.addAll(Arrays.asList(
+                new Background("resources/background.jpg", 7, true)
+        ));
 
         // Platform Sprites
         for(i = 0; i <= 8; i++){
@@ -174,11 +177,10 @@ public class Platformer_2D extends PApplet {
 
         for(int[] pos: platform_position){
             createPlatform(pos[0],pos[1],pos[2], pos[3]);
-
         }
         // Adding Platforms
-        for( i = 0; i < map.length; i++){
-            for( j = 0; j < map[0].length; j++) {
+        for(i = 0; i < map.length; i++){
+            for(j = 0; j < map[0].length; j++) {
                 if (map[i][j] != 0) {
                     // j is the column * hence the X directions
                     // i is the row    * hence the Y direction
@@ -204,7 +206,11 @@ public class Platformer_2D extends PApplet {
 
     public void draw() {
         // Background
-        drawBackground();
+//        drawBackground();
+        background(200);
+        for(Background g : backgrounds){
+            g.draw();
+        }
         drawFlag();
         //Players
         p1.update();
@@ -238,15 +244,17 @@ public class Platformer_2D extends PApplet {
       /***************************************/
      /*            Drawing Stuff           */
     /*************************************/
-    public void drawBackground(){
-        background(100);
-        int i, j;
-        for(i = 0; i < canvasWidth/64; i++){
-            for(j = 0; j < canvasHeight/64; j++) {
-                image(bgImage, bgImage.width * i, bgImage.height * j);
-            }
-        }
-    }
+//    public void drawBackground(){
+//        background(100);
+//        int i, j;
+//        for(i = 0; i < canvasWidth/64; i++){
+//            for(j = 0; j < canvasHeight/64; j++) {
+//                image(bgImage, bgImage.width * i, bgImage.height * j);
+//            }
+//        }
+//    }
+
+
     public void drawFlag(){
         image(flagAnim[flagAnimFrame], 400,400);
     }
@@ -331,6 +339,7 @@ public class Platformer_2D extends PApplet {
     }
     public void reset(){
         platforms.clear();
+        backgrounds.clear();
         setup();
     }
     /*********************    COLLISION CODE    *******************/
@@ -388,7 +397,7 @@ public class Platformer_2D extends PApplet {
 
     /*********************  CLASSES  *******************/
     public class Player {
-        public int x = 50, y = 100, w = 64, h = 64, jCount = 0, jMax = 2, speed = 7;
+        public int x = 50, y = 100, w = 64, h = 64, jCount = 0, jMax = 2, speed = 13;
         public double velx = 0, vely = 0, jumpForce = 15;
         public boolean isOnGround = true, moveLeft = false, moveRight = false, facingLeft = false;
 
@@ -414,6 +423,15 @@ public class Platformer_2D extends PApplet {
             if (x < leftThreshold && direction == -1 || x > rightThreshold && direction == 1) {
                 for (Platform p : platforms) {
                     p.x -= speed * direction;
+                }
+                for(Background g : backgrounds){
+                    g.currentX -= g.speed * direction;
+                    if(g.currentX > 0){
+                        g.currentX = -canvasWidth;
+                    }
+                    else if(g.currentX < -canvasWidth){
+                        g.currentX = 0;
+                    }
                 }
             } else {
                 x += speed * direction;
@@ -475,7 +493,6 @@ public class Platformer_2D extends PApplet {
                 }
                 // IF the player is not jumping, then it's falling
                 image(playerFallSprite, x, y);
-                return;
             }
         }
     }
@@ -494,6 +511,45 @@ public class Platformer_2D extends PApplet {
             this.h = img.height;
         }
          void draw() {
+            image(img, x, y);
+        }
+    }
+
+    public class Background{
+        public int speed, currentX = 0;
+        public String imgSrc;
+        public PImage img;
+        public boolean repeatable;
+        public Background(String imgSrc, int speed, boolean repeatable) {
+            this.imgSrc = imgSrc;
+            this.img = loadImage(imgSrc);
+            this.img.resize(canvasWidth,canvasHeight);
+            this.speed = speed;
+            this.repeatable = repeatable;
+        }
+        void draw() {
+            if(repeatable){
+                image(img, currentX, 0);
+                image(img, currentX + canvasWidth, 0);
+            }
+            else{
+                image(img, currentX, 0);
+            }
+        }
+    }
+    public class GenericObject {
+        public int x, y, w, h, speed;
+        public String imgSrc;
+        public PImage img;
+        //        public boolean canJumpUnderneath;
+        public GenericObject(int x, int y, int w, int h, String imgSrc, int speed) {
+            this.x = x;
+            this.y = y;
+            this.img = loadImage(imgSrc);
+            this.img.resize(w, h);
+            this.speed = speed;
+        }
+        void draw() {
             image(img, x, y);
         }
     }
@@ -545,7 +601,37 @@ public class Platformer_2D extends PApplet {
     }
 }
 /************* UN-USED CODE ****************/
-//    Timer timer1;
-//        timer1 = new Timer();
+//    Timer timer1;         // in setup
+//        timer1 = new Timer(); // in draw
 //        timer1.countUp();
 //        timer1.advancedDraw(300,100);
+
+
+                        /***********************************
+                         ****   Background demonstration ****
+                          ************************************/
+
+//                            (0,0)                     (canvasWidth,0)
+//                                /*************************************************/
+//                                //                        *                      //
+//                                //                        *                      //
+//                                // \ O /                  *                      //
+//                                //  -+-                   *                      //
+//                                //   |                    *                      //
+//                                //  / \                   *                      //
+//                                //                        *                      //
+//                                //                        *                      //
+//                                /*************************************************/
+//
+//(-canvaswidth, 0)            (0,0)
+///*************************************************/
+////                        *                      //
+////                        *                      //
+////                        *  \ O /               //
+////                        *   -+-                //
+////                        *    |                 //
+////                        *   / \                //
+////                        *                      //
+////                        *                      //
+///*************************************************/
+
